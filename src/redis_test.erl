@@ -2,11 +2,15 @@
 
 -define(PRECISION,10).
 
--export([start/4]).
+-export([start/1]).
 
-start(WriteProcess,ReadProcess, Count, Redis) ->
+start([WriteProcessSrc,ReadProcessSrc, CountSrc, Redis]) ->
     {ok, Pid} = eredis:start_link(Redis,6379),    
     eredis:q(Pid,["flushall"]),
+
+    {WriteProcess,_} = string:to_integer(WriteProcessSrc),
+    {ReadProcess,_}  = string:to_integer(ReadProcessSrc),
+    {Count,_}        = string:to_integer(CountSrc),
 
     parallel_set(WriteProcess, Count, Pid),
     parallel_get(ReadProcess, Count, Pid),
@@ -31,7 +35,7 @@ parallel_get(ProcessCount, Count, Pid) ->
 get_key(0, _Pid) -> ok;
 get_key(Count,Pid) ->
     StartTime = get_seconds(),
-    eredis:q(Pid,['set'|[Count,"1"]]),
+    eredis:q(Pid,['get'|[random:uniform(750000000),"1"]]),
     EndTime = get_seconds(),
     Flag = judge(Count),
     output("Read",Flag, EndTime - StartTime),
@@ -50,7 +54,7 @@ parallel_set(ProcessCount, Count, Pid) ->
 set_key(0, _Pid) -> ok;
 set_key(Count,Pid) ->
     StartTime = get_seconds(),
-    eredis:q(Pid,['set'|[Count,"1"]]),
+    eredis:q(Pid,['set'|[random:uniform(750000000),"1"]]),
     EndTime = get_seconds(),
     Flag = judge(Count),
     output("Write",Flag, EndTime - StartTime),
